@@ -12,22 +12,43 @@ struct tnode {
 	struct tnode *right;
 };
 
+int size(struct tnode* node); 
 struct tnode *addtree(struct tnode *, char *);
-void treeprint(struct tnode *);
+void savetree(struct tnode *, struct tnode *);
 int getword(char *, int);
+int compare (const void *, const void *);
 
-/* Word frequency count */
+/* Word frequency count in decreasing order of occurence */
 int main()
 {
 	struct tnode *root;
 	char word[MAXWORD];
 
 	root = NULL;
-	while(getword(word, MAXWORD) != EOF)
+	while(getword(word, MAXWORD) != '1')
 		if(isalpha(word[0]))
 			root = addtree(root, word);
-	treeprint(root);
+	int s = size(root);
+	
+	struct tnode keys[s];
+
+	savetree(root, keys);
+	
+	qsort (keys, s, sizeof(struct tnode), compare);
+
+	for (int n=0; n<s; n++)
+		printf ("word = %s count = %d \n",keys[n].word, keys[n].count);          
+   
 	return 0;
+}
+
+int compare (const void * a, const void * b)
+{
+
+  struct tnode *nodeA = (struct tnode *)a;
+  struct tnode *nodeB = (struct tnode *)b;
+
+  return ( nodeB->count - nodeA->count );
 }
 
 /* talloc: make a tnode */
@@ -36,7 +57,7 @@ struct tnode *talloc(void)
 	return (struct tnode *) malloc(sizeof(struct tnode));
 }
 
-char *strdup(char *s) /*make a duplicate of s*/
+char *strdup1(char *s) /*make a duplicate of s*/
 {
 	char *p;
 	
@@ -53,7 +74,7 @@ struct tnode *addtree(struct tnode *p, char *w)
 
 	if(p == NULL) {
 		p = talloc();
-		p->word = strdup(w);
+		p->word = strdup1(w);
 		p->count = 1;
 		p->left = p->right = NULL;
 	} else if((cond = strcmp(w, p->word)) == 0)
@@ -65,13 +86,24 @@ struct tnode *addtree(struct tnode *p, char *w)
 	return p;
 }
 
-/* treeprint: in-order print of tree p */
-void treeprint(struct tnode *p)
+/* Computes the number of nodes in a tree. */
+int size(struct tnode* node) 
+{  
+  if (node==NULL) 
+    return 0;
+  else    
+    return(size(node->left) + 1 + size(node->right));  
+}
+
+/* savetree: in-order save tree in array of structs */
+void savetree(struct tnode *p, struct tnode keys[])
 {
+	static int i = 0;
 	if (p != NULL) {
-		treeprint(p->left);
-		printf("%4d %s\n", p->count, p->word);
-		treeprint(p->right);
+		savetree(p->left, keys);
+		keys[i].count = p->count;
+		keys[i++].word = strdup1(p->word);
+		savetree(p->right, keys);
 	}
 }
 
